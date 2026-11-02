@@ -73,6 +73,10 @@ document.addEventListener('DOMContentLoaded', function() {
             mobileMenuBtn.classList.remove('open');
             mobileMenuBtn.setAttribute('aria-expanded', 'false');
         }
+        // Collapse all dropdowns
+        navLinks.querySelectorAll('.has-dropdown.open').forEach(function(d) {
+            d.classList.remove('open');
+        });
     }
 
     if (mobileMenuBtn && navLinks) {
@@ -85,12 +89,27 @@ document.addEventListener('DOMContentLoaded', function() {
             drawerCloseBtn.addEventListener('click', function() { closeMenu(); });
         }
 
-        // Mobile: no dropdowns - Services/Projects links go straight to their pages
-        // (hover dropdowns only apply on larger screens via CSS)
+        // Mobile dropdown toggle: chevron icon opens/closes, link text navigates
+        navLinks.querySelectorAll('.has-dropdown').forEach(function(item) {
+            var chevron = item.querySelector(':scope > a > .fa-chevron-down');
+            if (chevron) {
+                chevron.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    item.classList.toggle('open');
+                });
+            }
+        });
 
-        // Close the drawer when any nav link is followed
+        // Close the drawer when any nav link is clicked (except chevron toggles)
         navLinks.querySelectorAll('a').forEach(function(link) {
-            link.addEventListener('click', function() { closeMenu(); });
+            link.addEventListener('click', function(e) {
+                // Don't close if clicking a parent link with dropdown (let user see sub-menu)
+                if (link.closest('.has-dropdown') && link === link.closest('.has-dropdown').querySelector(':scope > a')) {
+                    return;
+                }
+                closeMenu();
+            });
         });
 
         // Escape key closes the drawer
