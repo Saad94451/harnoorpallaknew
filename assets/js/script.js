@@ -1,37 +1,78 @@
 // script.js - Harnoor Pallak Construction Ltd.
 
 document.addEventListener('DOMContentLoaded', function() {
-    // MOBILE NAVIGATION: full-screen drawer (slides in left to right)
+    // MOBILE NAVIGATION: premium full-screen drawer (slides in left to right)
     var mobileMenuBtn = document.querySelector('.mobile-menu-btn');
     var navLinks = document.querySelector('.nav-links');
     var MOBILE_BP = 992;
 
-    // Inject a close button for the drawer
-    var closeBtn = document.createElement('button');
-    closeBtn.className = 'mobile-close-btn';
-    closeBtn.setAttribute('aria-label', 'Close menu');
-    closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-    document.body.appendChild(closeBtn);
-
-    function setMenuIcon(iconName) {
-        var icon = mobileMenuBtn ? mobileMenuBtn.querySelector('i') : null;
-        if (icon) {
-            icon.className = 'fa-solid ' + iconName;
-        }
+    // Inject animated hamburger bars (replaces the old fa-bars icon)
+    if (mobileMenuBtn) {
+        mobileMenuBtn.innerHTML = '<span class="hb-bar"></span><span class="hb-bar"></span><span class="hb-bar"></span>';
+        mobileMenuBtn.setAttribute('role', 'button');
+        mobileMenuBtn.setAttribute('tabindex', '0');
+        mobileMenuBtn.setAttribute('aria-label', 'Open menu');
+        mobileMenuBtn.setAttribute('aria-expanded', 'false');
+        mobileMenuBtn.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); mobileMenuBtn.click(); }
+        });
     }
+
+    // Inject the drawer header (logo + close) and footer (contact + socials + CTA)
+    if (navLinks) {
+        var header = document.createElement('div');
+        header.className = 'drawer-header';
+        header.innerHTML =
+            '<span class="drawer-logo"><img src="./assets/img/logo-removebg-preview.png" alt="Harnoor Pallak Construction Ltd."></span>' +
+            '<button type="button" class="drawer-close" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>';
+        navLinks.insertBefore(header, navLinks.firstChild);
+
+        // Reuse phone/email shown in the page's top bar so the drawer stays in sync
+        var tel = '', mail = '';
+        document.querySelectorAll('.top-bar-right span').forEach(function(s) {
+            var t = s.textContent.trim();
+            if (/\+\d[\d\s().-]*\d/.test(t) && t.indexOf('@') === -1) tel = t;
+            if (t.indexOf('@') !== -1) mail = t;
+        });
+        var footer = document.createElement('div');
+        footer.className = 'drawer-footer';
+        footer.innerHTML =
+            '<div class="drawer-contact">' +
+                (tel ? '<a href="tel:' + tel.replace(/[^+\d]/g, '') + '"><i class="fa-solid fa-phone"></i>' + tel + '</a>' : '') +
+                (mail ? '<a href="mailto:' + mail.replace(/\s/g, '') + '"><i class="fa-solid fa-envelope"></i>' + mail + '</a>' : '') +
+                '<span style="display:flex;align-items:center;justify-content:center;gap:10px;padding:7px 0;font-size:13.5px;color:rgba(255,255,255,.82)"><i class="fa-solid fa-clock" style="color:var(--accent-gold);font-size:13px;width:16px;text-align:center"></i>Mon - Fri: 8:00 AM - 5:00 PM</span>' +
+            '</div>' +
+            '<div class="drawer-social">' +
+                '<a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>' +
+                '<a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>' +
+                '<a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>' +
+            '</div>' +
+            '<a href="#" class="drawer-quote btn-gold">Get a Quote <i class="fa-solid fa-arrow-right"></i></a>';
+        navLinks.appendChild(footer);
+
+
+    }
+
+    var drawerCloseBtn = navLinks ? navLinks.querySelector('.drawer-close') : null;
 
     function openMenu() {
         // Fallback for mobile browsers where 100vh/100dvh misbehave
         navLinks.style.height = window.innerHeight + 'px';
         navLinks.classList.add('active');
         document.body.classList.add('menu-open');
-        setMenuIcon('fa-xmark');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.classList.add('open');
+            mobileMenuBtn.setAttribute('aria-expanded', 'true');
+        }
     }
 
     function closeMenu() {
         navLinks.classList.remove('active');
         document.body.classList.remove('menu-open');
-        setMenuIcon('fa-bars');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.classList.remove('open');
+            mobileMenuBtn.setAttribute('aria-expanded', 'false');
+        }
     }
 
     if (mobileMenuBtn && navLinks) {
@@ -40,7 +81,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (navLinks.classList.contains('active')) { closeMenu(); } else { openMenu(); }
         });
 
-        closeBtn.addEventListener('click', function() { closeMenu(); });
+        if (drawerCloseBtn) {
+            drawerCloseBtn.addEventListener('click', function() { closeMenu(); });
+        }
 
         // Mobile: no dropdowns - Services/Projects links go straight to their pages
         // (hover dropdowns only apply on larger screens via CSS)
@@ -210,8 +253,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Wire every "Get a Quote" button (navbar + hero/CTA) - matched by label text
-        document.querySelectorAll('a.btn-gold, button.btn-gold').forEach(function(btn) {
-            if (!/get\s+a\s+quote/i.test(btn.textContent)) return;
+        document.querySelectorAll('a.btn-gold, button.btn-gold, a.btn-promo-quote').forEach(function(btn) {
+            if (!/get\s+a\s+(?:free\s+)?quote/i.test(btn.textContent)) return;
+            // Only intercept placeholder links (#), not buttons that go to a real page
+            var href = btn.getAttribute('href');
+            if (href && href !== '#') return;
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
                 openQuoteModal();
